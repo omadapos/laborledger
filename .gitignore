@@ -1,0 +1,14 @@
+node_modules/
+.next/
+dist/
+coverage/
+.turbo/
+.pnpm-store/
+.env
+.env.staging
+.env.local
+.env.production
+.env.*.local
+!.env.example
+!**/.env.example
+*.tsbuildinfo

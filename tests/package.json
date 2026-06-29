@@ -1,0 +1,14 @@
+{
+  "name": "@laborledger/tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,1283 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Group {
+  id         String      @id @default(cuid())
+  name       String
+  status     GroupStatus @default(ACTIVE)
+  suspendedAt DateTime?
+  suspendedByUserId String?
+  suspendedReason String?
+  archivedAt DateTime?
+  archivedByUserId String?
+  archivedReason String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  companies  Company[]
+  memberships GroupMembership[]
+  invitations Invitation[]
+  auditEvents AuditEvent[]
+  serviceClients ServiceClient[]
+  locations    Location[]
+  employees    Employee[]
+  supervisorAssignments SupervisorLocationAssignment[]
+  scheduleTemplates ScheduleTemplate[]
+  shiftGenerationBatches ShiftGenerationBatch[]
+  shifts       Shift[]
+  kiosks       Kiosk[]
+  punchEvents  PunchEvent[]
+  correctionRequests CorrectionRequest[]
+  punchCorrections PunchCorrection[]
+  weeklyPeriods WeeklyPeriod[]
+  serviceCatalogItems ServiceCatalogItem[]
+  vehicles       Vehicle[]
+  workOrders     WorkOrder[]
+  workOrderServiceLines WorkOrderServiceLine[]
+  workOrderStatusHistory WorkOrderStatusHistory[]
+  workOrderAssignments WorkOrderAssignment[]
+  vehicleResponsibilityLogs VehicleResponsibilityLog[]
+  workerScanEvents WorkerScanEvent[]
+  serviceCompletions ServiceCompletion[]
+  clientInvoices     ClientInvoice[]
+  clientInvoiceLines ClientInvoiceLine[]
+  clientInvoiceDeliveries ClientInvoiceDelivery[]
+  laborWorkAssignments LaborWorkAssignment[]
+
+  @@map("groups")
+}
+
+model Company {
+  id                 String   @id @default(cuid())
+  groupId            String
+  name               String
+  currencyCode       String   @default("USD")
+  legalName          String?
+  phone              String?
+  billingEmail       String?
+  primaryContactName String?
+  addressLine1       String?
+  addressLine2       String?
+  city               String?
+  stateRegion        String?
+  postalCode         String?
+  country            String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  group        Group    @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  memberships  CompanyMembership[]
+  invitations  Invitation[]
+  auditEvents  AuditEvent[]
+  serviceClients ServiceClient[]
+  locations    Location[]
+  employees    Employee[]
+  employeeRates EmployeeRate[]
+  clientLaborRates ClientLaborRate[]
+  supervisorAssignments SupervisorLocationAssignment[]
+  employeePinCredentials EmployeePinCredential[]
+  scheduleTemplates ScheduleTemplate[]
+  shiftGenerationBatches ShiftGenerationBatch[]
+  shifts       Shift[]
+  kiosks       Kiosk[]
+  punchEvents  PunchEvent[]
+  correctionRequests CorrectionRequest[]
+  punchCorrections PunchCorrection[]
+  weeklyPeriods WeeklyPeriod[]
+  serviceCatalogItems ServiceCatalogItem[]
+  vehicles       Vehicle[]
+  workOrders     WorkOrder[]
+  workOrderServiceLines WorkOrderServiceLine[]
+  workOrderStatusHistory WorkOrderStatusHistory[]
+  workOrderAssignments WorkOrderAssignment[]
+  vehicleResponsibilityLogs VehicleResponsibilityLog[]
+  workerScanEvents WorkerScanEvent[]
+  serviceCompletions ServiceCompletion[]
+  clientInvoices     ClientInvoice[]
+  clientInvoiceLines ClientInvoiceLine[]
+  clientInvoiceDeliveries ClientInvoiceDelivery[]
+  activeSessions     Session[]
+  laborWorkAssignments LaborWorkAssignment[]
+
+  @@index([groupId], map: "companies_group_id_idx")
+  @@unique([groupId, name], map: "companies_group_id_name_key")
+  @@map("companies")
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  passwordHash       String
+  fullName           String?
+  globalRole         GlobalRole          @default(NONE)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  sessions           Session[]
+  groupMemberships   GroupMembership[]
+  companyMemberships CompanyMembership[]
+  invitations        Invitation[]        @relation("InvitationUser")
+  createdInvitations Invitation[]        @relation("InvitationCreatedBy")
+  auditEvents        AuditEvent[]
+  createdEmployeePins EmployeePinCredential[] @relation("EmployeePinCreatedBy")
+  createdEmployeeRates EmployeeRate[]    @relation("EmployeeRateCreatedBy")
+  createdClientLaborRates ClientLaborRate[] @relation("ClientLaborRateCreatedBy")
+  assignedSupervisorLocations SupervisorLocationAssignment[] @relation("SupervisorAssignedBy")
+  supervisorLocationAssignments SupervisorLocationAssignment[] @relation("LocationSupervisor")
+  createdScheduleTemplates ScheduleTemplate[] @relation("ScheduleTemplateCreatedBy")
+  createdShiftGenerationBatches ShiftGenerationBatch[] @relation("ShiftGenerationBatchCreatedBy")
+  cancelledShifts Shift[] @relation("ShiftCancelledBy")
+  approvedShifts Shift[] @relation("ShiftApprovedBy")
+  additionalTimeApprovedShifts Shift[] @relation("ShiftAdditionalTimeApprovedBy")
+  requestedCorrections CorrectionRequest[] @relation("CorrectionRequestedBy")
+  reviewedCorrections CorrectionRequest[] @relation("CorrectionReviewedBy")
+  appliedCorrections CorrectionRequest[] @relation("CorrectionAppliedBy")
+  appliedPunchCorrections PunchCorrection[] @relation("PunchCorrectionAppliedBy")
+  closedWeeklyPeriods WeeklyPeriod[] @relation("WeeklyPeriodClosedBy")
+  reopenedWeeklyPeriods WeeklyPeriod[] @relation("WeeklyPeriodReopenedBy")
+  weeklyCloseSnapshots WeeklyCloseSnapshot[] @relation("WeeklyCloseSnapshotCreatedBy")
+  workOrderStatusHistoryEntries WorkOrderStatusHistory[] @relation("WorkOrderStatusHistoryCreatedBy")
+  workOrderAssignmentsAssigned WorkOrderAssignment[] @relation("WorkOrderAssignmentAssignedBy")
+  workOrderAssignmentsUnassigned WorkOrderAssignment[] @relation("WorkOrderAssignmentUnassignedBy")
+  vehicleResponsibilityLogEntries VehicleResponsibilityLog[] @relation("VehicleResponsibilityLogActor")
+  voidedServiceCompletions ServiceCompletion[] @relation("ServiceCompletionVoidedBy")
+  issuedClientInvoices ClientInvoice[] @relation("ClientInvoiceIssuedBy")
+  voidedClientInvoices ClientInvoice[] @relation("ClientInvoiceVoidedBy")
+  sentClientInvoiceDeliveries ClientInvoiceDelivery[] @relation("ClientInvoiceDeliverySentBy")
+  passwordResetTokens       PasswordResetToken[]
+
+  @@map("users")
+}
+
+model Session {
+  id              String    @id @default(cuid())
+  userId          String
+  tokenHash       String    @unique
+  activeCompanyId String?
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime  @default(now())
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeCompany   Company?  @relation(fields: [activeCompanyId], references: [id], onDelete: SetNull)
+
+  @@index([userId], map: "sessions_user_id_idx")
+  @@index([expiresAt], map: "sessions_expires_at_idx")
+  @@index([activeCompanyId], map: "sessions_active_company_id_idx")
+  @@map("sessions")
+}
+
+model GroupMembership {
+  id         String           @id @default(cuid())
+  groupId    String
+  userId     String?
+  email      String
+  role       GroupRole
+  status     MembershipStatus @default(INVITED)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  group      Group            @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user       User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  invitations Invitation[]
+
+  @@index([groupId], map: "group_memberships_group_id_idx")
+  @@index([userId], map: "group_memberships_user_id_idx")
+  @@unique([groupId, email], map: "group_memberships_group_id_email_key")
+  @@map("group_memberships")
+}
+
+model CompanyMembership {
+  id         String           @id @default(cuid())
+  companyId  String
+  userId     String?
+  email      String
+  role       CompanyRole
+  status     MembershipStatus @default(INVITED)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  company    Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user       User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  invitations Invitation[]
+
+  @@index([companyId], map: "company_memberships_company_id_idx")
+  @@index([userId], map: "company_memberships_user_id_idx")
+  @@unique([companyId, email], map: "company_memberships_company_id_email_key")
+  @@map("company_memberships")
+}
+
+model Invitation {
+  id                  String             @id @default(cuid())
+  tokenHash           String             @unique
+  invitedEmail        String
+  expiresAt           DateTime
+  consumedAt          DateTime?
+  revokedAt           DateTime?
+  kind                InvitationKind     @default(ONBOARDING)
+  createdByUserId     String
+  userId              String?
+  groupId             String?
+  companyId           String?
+  groupMembershipId   String?
+  companyMembershipId String?
+  createdAt           DateTime           @default(now())
+  createdBy           User               @relation("InvitationCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  user                User?              @relation("InvitationUser", fields: [userId], references: [id], onDelete: SetNull)
+  group               Group?             @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  company             Company?           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  groupMembership     GroupMembership?   @relation(fields: [groupMembershipId], references: [id], onDelete: Cascade)
+  companyMembership   CompanyMembership? @relation(fields: [companyMembershipId], references: [id], onDelete: Cascade)
+
+  @@index([invitedEmail], map: "invitations_invited_email_idx")
+  @@index([expiresAt], map: "invitations_expires_at_idx")
+  @@index([companyId], map: "invitations_company_id_idx")
+  @@index([kind], map: "invitations_kind_idx")
+  @@map("invitations")
+}
+
+model PasswordResetToken {
+  id          String    @id @default(cuid())
+  userId      String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  requestedAt DateTime  @default(now())
+  requesterIp String?
+  userAgent   String?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "password_reset_tokens_user_id_idx")
+  @@index([expiresAt], map: "password_reset_tokens_expires_at_idx")
+  @@map("password_reset_tokens")
+}
+
+model AuditEvent {
+  id          String   @id @default(cuid())
+  actorUserId String
+  action      String
+  targetType  String
+  targetId    String
+  reason      String?
+  metadata    Json?
+  groupId     String?
+  companyId   String?
+  createdAt   DateTime @default(now())
+  actor       User     @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  group       Group?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId], map: "audit_events_actor_user_id_idx")
+  @@index([groupId], map: "audit_events_group_id_idx")
+  @@index([companyId], map: "audit_events_company_id_idx")
+  @@index([createdAt], map: "audit_events_created_at_idx")
+  @@map("audit_events")
+}
+
+model ServiceClient {
+  id          String   @id @default(cuid())
+  groupId     String
+  companyId   String
+  name        String
+  archivedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  locations   Location[]
+  laborRates  ClientLaborRate[]
+  shifts      Shift[]
+  scheduleTemplates ScheduleTemplate[]
+
+  vehicles      Vehicle[]
+  workOrders    WorkOrder[]
+  clientInvoices ClientInvoice[]
+  laborWorkAssignments LaborWorkAssignment[]
+
+  @@index([groupId], map: "service_clients_group_id_idx")
+  @@index([companyId], map: "service_clients_company_id_idx")
+  @@index([archivedAt], map: "service_clients_archived_at_idx")
+  @@unique([companyId, name], map: "service_clients_company_id_name_key")
+  @@map("service_clients")
+}
+
+model Location {
+  id          String   @id @default(cuid())
+  groupId     String
+  companyId   String
+  serviceClientId String
+  name        String
+  timezone    String
+  archivedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  serviceClient ServiceClient @relation(fields: [serviceClientId], references: [id], onDelete: Restrict)
+  laborRates  ClientLaborRate[]
+  supervisorAssignments SupervisorLocationAssignment[]
+  shifts      Shift[]
+  scheduleTemplates ScheduleTemplate[]
+  kiosk       Kiosk?
+  correctionRequests CorrectionRequest[]
+
+  vehicles      Vehicle[]
+  workOrders    WorkOrder[]
+  workerScanEvents WorkerScanEvent[]
+  laborWorkAssignments LaborWorkAssignment[]
+
+  @@index([groupId], map: "locations_group_id_idx")
+  @@index([companyId], map: "locations_company_id_idx")
+  @@index([serviceClientId], map: "locations_service_client_id_idx")
+  @@index([archivedAt], map: "locations_archived_at_idx")
+  @@unique([companyId, name], map: "locations_company_id_name_key")
+  @@map("locations")
+}
+
+model Employee {
+  id          String   @id @default(cuid())
+  groupId     String
+  companyId   String
+  fullName    String
+  archivedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  rates       EmployeeRate[]
+  pinCredentials EmployeePinCredential[]
+  shifts      Shift[]
+  scheduleTemplates ScheduleTemplate[]
+  punchEvents PunchEvent[]
+  correctionRequests CorrectionRequest[]
+  workOrderAssignments WorkOrderAssignment[]
+  vehicleResponsibilityLogs VehicleResponsibilityLog[]
+  workerScanEvents WorkerScanEvent[]
+  serviceCompletions ServiceCompletion[]
+  laborWorkAssignments LaborWorkAssignment[]
+
+  @@index([groupId], map: "employees_group_id_idx")
+  @@index([companyId], map: "employees_company_id_idx")
+  @@index([archivedAt], map: "employees_archived_at_idx")
+  @@unique([companyId, fullName], map: "employees_company_id_full_name_key")
+  @@map("employees")
+}
+
+model EmployeePinCredential {
+  id          String   @id @default(cuid())
+  employeeId  String
+  companyId   String
+  pinHash     String
+  revokedAt   DateTime?
+  createdByUserId String
+  createdAt   DateTime @default(now())
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  createdBy   User     @relation("EmployeePinCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([employeeId], map: "employee_pin_credentials_employee_id_idx")
+  @@index([companyId], map: "employee_pin_credentials_company_id_idx")
+  @@index([revokedAt], map: "employee_pin_credentials_revoked_at_idx")
+  @@map("employee_pin_credentials")
+}
+
+model EmployeeRate {
+  id             String   @id @default(cuid())
+  employeeId     String
+  companyId      String
+  rateMinorUnits Int
+  currencyCode   String   @default("USD")
+  effectiveStart DateTime
+  effectiveEnd   DateTime?
+  createdByUserId String
+  createdAt      DateTime @default(now())
+  employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  createdBy      User     @relation("EmployeeRateCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([employeeId], map: "employee_rates_employee_id_idx")
+  @@index([companyId], map: "employee_rates_company_id_idx")
+  @@index([effectiveStart], map: "employee_rates_effective_start_idx")
+  @@map("employee_rates")
+}
+
+model ClientLaborRate {
+  id             String   @id @default(cuid())
+  companyId      String
+  serviceClientId String?
+  locationId     String?
+  rateMinorUnits Int
+  currencyCode   String   @default("USD")
+  effectiveStart DateTime
+  effectiveEnd   DateTime?
+  createdByUserId String
+  createdAt      DateTime @default(now())
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  serviceClient  ServiceClient? @relation(fields: [serviceClientId], references: [id], onDelete: Restrict)
+  location       Location? @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  createdBy      User     @relation("ClientLaborRateCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([companyId], map: "client_labor_rates_company_id_idx")
+  @@index([serviceClientId], map: "client_labor_rates_service_client_id_idx")
+  @@index([locationId], map: "client_labor_rates_location_id_idx")
+  @@index([effectiveStart], map: "client_labor_rates_effective_start_idx")
+  @@map("client_labor_rates")
+}
+
+model SupervisorLocationAssignment {
+  id               String   @id @default(cuid())
+  groupId          String
+  companyId        String
+  locationId       String
+  supervisorUserId String
+  assignedByUserId String
+  assignedAt       DateTime @default(now())
+  unassignedAt     DateTime?
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  group            Group    @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  location         Location @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  supervisor       User     @relation("LocationSupervisor", fields: [supervisorUserId], references: [id], onDelete: Restrict)
+  assignedBy       User     @relation("SupervisorAssignedBy", fields: [assignedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([groupId], map: "supervisor_location_assignments_group_id_idx")
+  @@index([companyId], map: "supervisor_location_assignments_company_id_idx")
+  @@index([locationId], map: "supervisor_location_assignments_location_id_idx")
+  @@index([supervisorUserId], map: "supervisor_location_assignments_supervisor_user_id_idx")
+  @@index([unassignedAt], map: "supervisor_location_assignments_unassigned_at_idx")
+  @@map("supervisor_location_assignments")
+}
+
+model ScheduleTemplate {
+  id             String   @id @default(cuid())
+  groupId        String
+  companyId      String
+  locationId     String
+  employeeId     String
+  serviceClientId String
+  name           String
+  daysOfWeek     Int[]
+  localStartTime String
+  localEndTime   String
+  timezone       String
+  startsOnDate   DateTime
+  endsOnDate     DateTime?
+  archivedAt     DateTime?
+  createdByUserId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  group          Group    @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  location       Location @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  serviceClient  ServiceClient @relation(fields: [serviceClientId], references: [id], onDelete: Restrict)
+  createdBy      User     @relation("ScheduleTemplateCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  generationBatches ShiftGenerationBatch[]
+
+  @@index([groupId], map: "schedule_templates_group_id_idx")
+  @@index([companyId], map: "schedule_templates_company_id_idx")
+  @@index([locationId], map: "schedule_templates_location_id_idx")
+  @@index([employeeId], map: "schedule_templates_employee_id_idx")
+  @@index([archivedAt], map: "schedule_templates_archived_at_idx")
+  @@map("schedule_templates")
+}
+
+model ShiftGenerationBatch {
+  id              String   @id @default(cuid())
+  groupId         String
+  companyId       String
+  operationType   ShiftBatchType
+  operationKey    String   @unique
+  sourceTemplateId String?
+  sourceWeekStartUtc DateTime?
+  targetWeekStartUtc DateTime?
+  createdByUserId String
+  createdAt       DateTime @default(now())
+  group           Group    @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  sourceTemplate  ScheduleTemplate? @relation(fields: [sourceTemplateId], references: [id], onDelete: SetNull)
+  createdBy       User     @relation("ShiftGenerationBatchCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  shifts          Shift[]
+
+  @@index([groupId], map: "shift_generation_batches_group_id_idx")
+  @@index([companyId], map: "shift_generation_batches_company_id_idx")
+  @@index([sourceTemplateId], map: "shift_generation_batches_source_template_id_idx")
+  @@map("shift_generation_batches")
+}
+
+model Shift {
+  id              String   @id @default(cuid())
+  groupId         String
+  companyId       String
+  locationId      String
+  employeeId      String
+  serviceClientId String
+  status          ShiftStatus @default(SCHEDULED)
+  scheduledStartUtc DateTime
+  scheduledEndUtc DateTime
+  timezone        String
+  cancelledAt     DateTime?
+  cancelledByUserId String?
+  cancelReason    String?
+  approvedAt      DateTime?
+  approvedByUserId String?
+  additionalTimeApprovedAt DateTime?
+  additionalTimeApprovedByUserId String?
+  generationBatchId String?
+  planningKey     String? @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  group           Group    @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  location        Location @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  serviceClient   ServiceClient @relation(fields: [serviceClientId], references: [id], onDelete: Restrict)
+  cancelledBy     User?    @relation("ShiftCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: SetNull)
+  approvedBy      User?    @relation("ShiftApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  additionalTimeApprovedBy User? @relation("ShiftAdditionalTimeApprovedBy", fields: [additionalTimeApprovedByUserId], references: [id], onDelete: SetNull)
+  generationBatch ShiftGenerationBatch? @relation(fields: [generationBatchId], references: [id], onDelete: SetNull)
+  punchEvents     PunchEvent[]
+  correctionRequests CorrectionRequest[]
+  punchCorrections PunchCorrection[]
+  laborWorkAssignments LaborWorkAssignment[]
+
+  @@index([groupId], map: "shifts_group_id_idx")
+  @@index([companyId], map: "shifts_company_id_idx")
+  @@index([locationId], map: "shifts_location_id_idx")
+  @@index([employeeId], map: "shifts_employee_id_idx")
+  @@index([scheduledStartUtc], map: "shifts_scheduled_start_utc_idx")
+  @@index([scheduledEndUtc], map: "shifts_scheduled_end_utc_idx")
+  @@index([status], map: "shifts_status_idx")
+  @@index([generationBatchId], map: "shifts_generation_batch_id_idx")
+  @@index([approvedAt], map: "shifts_approved_at_idx")
+  @@map("shifts")
+}
+
+model Kiosk {
+  id         String   @id @default(cuid())
+  groupId    String
+  companyId  String
+  locationId String   @unique
+  name       String
+  archivedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  group      Group    @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  credential KioskCredential?
+  punchEvents PunchEvent[]
+
+  @@index([groupId], map: "kiosks_group_id_idx")
+  @@index([companyId], map: "kiosks_company_id_idx")
+  @@map("kiosks")
+}
+
+model KioskCredential {
+  id         String   @id @default(cuid())
+  kioskId    String   @unique
+  secretHash String
+  createdAt  DateTime @default(now())
+  revokedAt  DateTime?
+  kiosk      Kiosk    @relation(fields: [kioskId], references: [id], onDelete: Restrict)
+
+  @@map("kiosk_credentials")
+}
+
+model PunchEvent {
+  id                String      @id @default(cuid())
+  groupId           String
+  companyId         String
+  shiftId           String
+  employeeId        String
+  kioskId           String
+  action            PunchAction
+  eventUtc          DateTime
+  serverReceivedUtc DateTime    @default(now())
+  idempotencyKey    String      @unique
+  deviceEventId     String?
+  deviceTimestamp   DateTime?
+  sequence          Int?
+  isLate            Boolean     @default(false)
+  isEarly           Boolean     @default(false)
+  breakMinutes      Int?
+  group             Group       @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company           Company     @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  shift             Shift       @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+  employee          Employee    @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  kiosk             Kiosk       @relation(fields: [kioskId], references: [id], onDelete: Restrict)
+  punchCorrections  PunchCorrection[]
+
+  @@index([shiftId], map: "punch_events_shift_id_idx")
+  @@index([employeeId], map: "punch_events_employee_id_idx")
+  @@index([kioskId], map: "punch_events_kiosk_id_idx")
+  @@index([eventUtc], map: "punch_events_event_utc_idx")
+  @@map("punch_events")
+}
+
+model CorrectionRequest {
+  id                   String            @id @default(cuid())
+  groupId              String
+  companyId            String
+  shiftId              String
+  employeeId           String
+  locationId           String
+  type                 CorrectionType
+  status               CorrectionStatus  @default(PENDING)
+  reason               String
+  originalPayload      Json
+  proposedPayload      Json
+  finalPayload         Json?
+  requestedByUserId    String?
+  requestedByEmployeeId String?
+  reviewedByUserId     String?
+  reviewedAt           DateTime?
+  reviewReason         String?
+  appliedAt            DateTime?
+  appliedByUserId      String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  group                Group             @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company              Company           @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  shift                Shift             @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+  employee             Employee          @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  location             Location          @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  requestedBy          User?             @relation("CorrectionRequestedBy", fields: [requestedByUserId], references: [id], onDelete: SetNull)
+  reviewedBy           User?             @relation("CorrectionReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  appliedBy            User?             @relation("CorrectionAppliedBy", fields: [appliedByUserId], references: [id], onDelete: SetNull)
+  punchCorrection      PunchCorrection?
+
+  @@index([companyId], map: "correction_requests_company_id_idx")
+  @@index([shiftId], map: "correction_requests_shift_id_idx")
+  @@index([status], map: "correction_requests_status_idx")
+  @@index([createdAt], map: "correction_requests_created_at_idx")
+  @@map("correction_requests")
+}
+
+model PunchCorrection {
+  id                  String            @id @default(cuid())
+  groupId             String
+  companyId           String
+  shiftId             String
+  correctionRequestId String            @unique
+  targetPunchEventId  String?
+  action              PunchAction
+  eventUtc            DateTime
+  breakMinutes        Int?
+  isLate              Boolean           @default(false)
+  isEarly             Boolean           @default(false)
+  appliedAt           DateTime          @default(now())
+  appliedByUserId     String
+  group               Group             @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company             Company           @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  shift               Shift             @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+  correctionRequest   CorrectionRequest @relation(fields: [correctionRequestId], references: [id], onDelete: Restrict)
+  targetPunchEvent    PunchEvent?       @relation(fields: [targetPunchEventId], references: [id], onDelete: SetNull)
+  appliedBy           User              @relation("PunchCorrectionAppliedBy", fields: [appliedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([shiftId], map: "punch_corrections_shift_id_idx")
+  @@index([companyId], map: "punch_corrections_company_id_idx")
+  @@map("punch_corrections")
+}
+
+enum GlobalRole {
+  NONE
+  PLATFORM_SUPERADMIN
+}
+
+enum GroupRole {
+  GROUP_OWNER
+}
+
+enum GroupStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum CompanyRole {
+  COMPANY_ADMIN
+  SUPERVISOR
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  REVOKED
+}
+
+enum InvitationKind {
+  ONBOARDING
+  COMPANY_ADMIN_ACCESS
+}
+
+enum ShiftStatus {
+  SCHEDULED
+  CANCELLED
+}
+
+enum ShiftBatchType {
+  RECURRING_TEMPLATE
+  COPY_WEEK
+}
+
+enum PunchAction {
+  CLOCK_IN
+  BREAK_START
+  BREAK_END
+  CLOCK_OUT
+}
+
+enum CorrectionType {
+  MISSING_CLOCK_OUT
+  OPEN_BREAK_END
+  INCORRECT_CLOCK_IN
+  INCORRECT_CLOCK_OUT
+  INCORRECT_BREAK_START
+  INCORRECT_BREAK_END
+}
+
+enum CorrectionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  APPLIED
+}
+
+enum WeeklyPeriodStatus {
+  OPEN
+  CLOSED
+  REOPENED
+}
+
+enum WorkOrderStatus {
+  DRAFT
+  READY
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  INVOICED
+  CANCELLED
+}
+
+enum ClientInvoiceStatus {
+  DRAFT
+  ISSUED
+  VOID
+}
+
+enum ClientInvoiceDeliveryStatus {
+  SENT
+  FAILED
+}
+
+model WeeklyPeriod {
+  id                 String             @id @default(cuid())
+  groupId            String
+  companyId          String
+  weekStartLocalDate String
+  weekEndLocalDate   String
+  closeTimeZone      String
+  targetPayDate      String
+  status             WeeklyPeriodStatus @default(OPEN)
+  closedAt           DateTime?
+  closedByUserId     String?
+  reopenedAt         DateTime?
+  reopenedByUserId   String?
+  reopenReason       String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  group              Group              @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company            Company            @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  closedBy           User?              @relation("WeeklyPeriodClosedBy", fields: [closedByUserId], references: [id], onDelete: SetNull)
+  reopenedBy         User?              @relation("WeeklyPeriodReopenedBy", fields: [reopenedByUserId], references: [id], onDelete: SetNull)
+  snapshots          WeeklyCloseSnapshot[]
+
+  @@unique([companyId, weekStartLocalDate], map: "weekly_periods_company_id_week_start_key")
+  @@index([companyId], map: "weekly_periods_company_id_idx")
+  @@index([status], map: "weekly_periods_status_idx")
+  @@map("weekly_periods")
+}
+
+model WeeklyCloseSnapshot {
+  id                         String       @id @default(cuid())
+  weeklyPeriodId             String
+  version                    Int
+  snapshotPayload            Json
+  approvedShiftCount         Int
+  payableMinutes             Int
+  employeeGrossEstimateMinor Int
+  clientLaborEstimateMinor   Int
+  grossMarginEstimateMinor   Int
+  createdAt                  DateTime     @default(now())
+  createdByUserId            String
+  weeklyPeriod               WeeklyPeriod @relation(fields: [weeklyPeriodId], references: [id], onDelete: Restrict)
+  createdBy                  User         @relation("WeeklyCloseSnapshotCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([weeklyPeriodId, version], map: "weekly_close_snapshots_period_version_key")
+  @@index([weeklyPeriodId], map: "weekly_close_snapshots_period_id_idx")
+  @@map("weekly_close_snapshots")
+}
+
+model ServiceCatalogItem {
+  id              String    @id @default(cuid())
+  groupId         String
+  companyId       String
+  name            String
+  description     String?
+  category        String?
+  fixedPriceMinor Int
+  currencyCode    String    @default("USD")
+  archivedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  group           Group     @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  workOrderServiceLines WorkOrderServiceLine[]
+  laborWorkAssignments LaborWorkAssignment[]
+
+  @@index([groupId], map: "service_catalog_items_group_id_idx")
+  @@index([companyId], map: "service_catalog_items_company_id_idx")
+  @@index([companyId, archivedAt], map: "service_catalog_items_company_id_archived_at_idx")
+  @@unique([companyId, name], map: "service_catalog_items_company_id_name_key")
+  @@map("service_catalog_items")
+}
+
+model Vehicle {
+  id              String    @id @default(cuid())
+  groupId         String
+  companyId       String
+  serviceClientId String
+  locationId      String
+  vin             String
+  plate           String?
+  color           String?
+  mileage         Int?
+  notes           String?
+  year            Int?
+  make            String?
+  model           String?
+  trim            String?
+  bodyClass       String?
+  vehicleType     String?
+  fuelType        String?
+  decodedAt       DateTime?
+  decodeSource    String?
+  decodePayload   Json?
+  archivedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  group           Group         @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  serviceClient   ServiceClient @relation(fields: [serviceClientId], references: [id], onDelete: Restrict)
+  location        Location      @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  workOrders      WorkOrder[]
+  responsibilityLogs VehicleResponsibilityLog[]
+  workerScanEvents WorkerScanEvent[]
+  clientInvoiceLines ClientInvoiceLine[]
+  laborWorkAssignments LaborWorkAssignment[]
+
+  @@index([groupId], map: "vehicles_group_id_idx")
+  @@index([companyId], map: "vehicles_company_id_idx")
+  @@index([serviceClientId], map: "vehicles_service_client_id_idx")
+  @@index([locationId], map: "vehicles_location_id_idx")
+  @@index([companyId, archivedAt], map: "vehicles_company_id_archived_at_idx")
+  @@unique([companyId, vin], map: "vehicles_company_id_vin_key")
+  @@map("vehicles")
+}
+
+model WorkOrder {
+  id              String          @id @default(cuid())
+  groupId         String
+  companyId       String
+  serviceClientId String
+  locationId      String
+  vehicleId       String
+  workOrderNumber String
+  status          WorkOrderStatus @default(DRAFT)
+  notes           String?
+  cancelledAt     DateTime?
+  cancelReason    String?
+  invoicedClientInvoiceId String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  group           Group           @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company         Company         @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  serviceClient   ServiceClient   @relation(fields: [serviceClientId], references: [id], onDelete: Restrict)
+  location        Location        @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  vehicle         Vehicle         @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  invoicedClientInvoice ClientInvoice? @relation("WorkOrderInvoicedBy", fields: [invoicedClientInvoiceId], references: [id], onDelete: SetNull)
+  serviceLines    WorkOrderServiceLine[]
+  statusHistory   WorkOrderStatusHistory[]
+  assignments     WorkOrderAssignment[]
+  responsibilityLogs VehicleResponsibilityLog[]
+  workerScanEvents WorkerScanEvent[]
+  serviceCompletions ServiceCompletion[]
+  clientInvoiceLines ClientInvoiceLine[]
+
+  @@index([groupId], map: "work_orders_group_id_idx")
+  @@index([companyId], map: "work_orders_company_id_idx")
+  @@index([serviceClientId], map: "work_orders_service_client_id_idx")
+  @@index([locationId], map: "work_orders_location_id_idx")
+  @@index([vehicleId], map: "work_orders_vehicle_id_idx")
+  @@index([companyId, status], map: "work_orders_company_id_status_idx")
+  @@index([invoicedClientInvoiceId], map: "work_orders_invoiced_client_invoice_id_idx")
+  @@unique([companyId, workOrderNumber], map: "work_orders_company_id_work_order_number_key")
+  @@map("work_orders")
+}
+
+model WorkOrderServiceLine {
+  id                      String             @id @default(cuid())
+  groupId                 String
+  companyId               String
+  workOrderId             String
+  serviceCatalogItemId    String
+  serviceNameSnapshot     String
+  serviceCategorySnapshot String?
+  unitPriceMinor          Int
+  currencyCode            String             @default("USD")
+  quantity                Int                @default(1)
+  lineTotalMinor          Int
+  notes                   String?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+  group                   Group              @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company                 Company            @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  workOrder               WorkOrder          @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  serviceCatalogItem      ServiceCatalogItem @relation(fields: [serviceCatalogItemId], references: [id], onDelete: Restrict)
+  assignments             WorkOrderAssignment[]
+  serviceCompletions      ServiceCompletion[]
+  clientInvoiceLines      ClientInvoiceLine[]
+
+  @@index([groupId], map: "work_order_service_lines_group_id_idx")
+  @@index([companyId], map: "work_order_service_lines_company_id_idx")
+  @@index([workOrderId], map: "work_order_service_lines_work_order_id_idx")
+  @@index([serviceCatalogItemId], map: "work_order_service_lines_service_catalog_item_id_idx")
+  @@map("work_order_service_lines")
+}
+
+model WorkOrderStatusHistory {
+  id              String           @id @default(cuid())
+  groupId         String
+  companyId       String
+  workOrderId     String
+  fromStatus      WorkOrderStatus?
+  toStatus        WorkOrderStatus
+  reason          String?
+  createdAt       DateTime         @default(now())
+  createdByUserId String
+  group           Group            @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  workOrder       WorkOrder        @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  createdBy       User             @relation("WorkOrderStatusHistoryCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([groupId], map: "work_order_status_history_group_id_idx")
+  @@index([companyId], map: "work_order_status_history_company_id_idx")
+  @@index([workOrderId], map: "work_order_status_history_work_order_id_idx")
+  @@map("work_order_status_history")
+}
+
+model WorkOrderAssignment {
+  id                     String    @id @default(cuid())
+  groupId                String
+  companyId              String
+  workOrderId            String
+  workOrderServiceLineId String?
+  employeeId             String
+  roleLabel              String?
+  assignedAt             DateTime  @default(now())
+  assignedByUserId       String?
+  unassignedAt           DateTime?
+  unassignedByUserId     String?
+  unassignReason         String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  group                  Group     @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company                Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  workOrder              WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  workOrderServiceLine   WorkOrderServiceLine? @relation(fields: [workOrderServiceLineId], references: [id], onDelete: Restrict)
+  employee               Employee  @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  assignedByUser         User?     @relation("WorkOrderAssignmentAssignedBy", fields: [assignedByUserId], references: [id], onDelete: SetNull)
+  unassignedByUser       User?     @relation("WorkOrderAssignmentUnassignedBy", fields: [unassignedByUserId], references: [id], onDelete: SetNull)
+  workerScanEvents       WorkerScanEvent[]
+  serviceCompletions     ServiceCompletion[]
+
+  @@index([groupId], map: "work_order_assignments_group_id_idx")
+  @@index([companyId], map: "work_order_assignments_company_id_idx")
+  @@index([workOrderId], map: "work_order_assignments_work_order_id_idx")
+  @@index([workOrderServiceLineId], map: "work_order_assignments_work_order_service_line_id_idx")
+  @@index([employeeId], map: "work_order_assignments_employee_id_idx")
+  @@index([companyId, unassignedAt], map: "work_order_assignments_company_id_unassigned_at_idx")
+  @@map("work_order_assignments")
+}
+
+model VehicleResponsibilityLog {
+  id            String   @id @default(cuid())
+  groupId       String
+  companyId     String
+  workOrderId   String
+  vehicleId     String
+  employeeId    String?
+  action        String
+  actorUserId   String?
+  occurredAt    DateTime @default(now())
+  details       Json?
+  group         Group    @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  workOrder     WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  vehicle       Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  employee      Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  actorUser     User?    @relation("VehicleResponsibilityLogActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([companyId], map: "vehicle_responsibility_logs_company_id_idx")
+  @@index([workOrderId], map: "vehicle_responsibility_logs_work_order_id_idx")
+  @@index([vehicleId], map: "vehicle_responsibility_logs_vehicle_id_idx")
+  @@index([employeeId], map: "vehicle_responsibility_logs_employee_id_idx")
+  @@map("vehicle_responsibility_logs")
+}
+
+model WorkerScanEvent {
+  id                    String    @id @default(cuid())
+  groupId               String
+  companyId             String
+  locationId            String
+  vehicleId             String
+  workOrderId           String
+  workOrderAssignmentId String?
+  employeeId            String
+  enteredVin            String
+  matchedVin            Boolean
+  source                String    @default("manual")
+  deviceLabel           String?
+  idempotencyKey        String?   @unique
+  acceptedAt            DateTime?
+  rejectedAt            DateTime?
+  rejectionReason       String?
+  createdAt             DateTime  @default(now())
+  group                 Group     @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company               Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  location              Location  @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  vehicle               Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  workOrder             WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  workOrderAssignment   WorkOrderAssignment? @relation(fields: [workOrderAssignmentId], references: [id], onDelete: SetNull)
+  employee              Employee  @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  serviceCompletions    ServiceCompletion[]
+
+  @@index([companyId], map: "worker_scan_events_company_id_idx")
+  @@index([locationId], map: "worker_scan_events_location_id_idx")
+  @@index([vehicleId], map: "worker_scan_events_vehicle_id_idx")
+  @@index([workOrderId], map: "worker_scan_events_work_order_id_idx")
+  @@index([employeeId], map: "worker_scan_events_employee_id_idx")
+  @@index([workOrderAssignmentId], map: "worker_scan_events_work_order_assignment_id_idx")
+  @@map("worker_scan_events")
+}
+
+model ServiceCompletion {
+  id                     String    @id @default(cuid())
+  groupId                String
+  companyId              String
+  workOrderId            String
+  workOrderServiceLineId String
+  employeeId             String
+  workOrderAssignmentId  String?
+  workerScanEventId      String?
+  completedAt            DateTime  @default(now())
+  completedBySource      String    @default("worker")
+  notes                  String?
+  voidedAt               DateTime?
+  voidedByUserId         String?
+  voidReason             String?
+  createdAt              DateTime  @default(now())
+  group                  Group     @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company                Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  workOrder              WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  workOrderServiceLine   WorkOrderServiceLine @relation(fields: [workOrderServiceLineId], references: [id], onDelete: Restrict)
+  employee               Employee  @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  workOrderAssignment    WorkOrderAssignment? @relation(fields: [workOrderAssignmentId], references: [id], onDelete: SetNull)
+  workerScanEvent        WorkerScanEvent? @relation(fields: [workerScanEventId], references: [id], onDelete: SetNull)
+  voidedByUser           User?     @relation("ServiceCompletionVoidedBy", fields: [voidedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([companyId], map: "service_completions_company_id_idx")
+  @@index([workOrderId], map: "service_completions_work_order_id_idx")
+  @@index([workOrderServiceLineId], map: "service_completions_work_order_service_line_id_idx")
+  @@index([employeeId], map: "service_completions_employee_id_idx")
+  @@map("service_completions")
+}
+
+model ClientInvoice {
+  id              String              @id @default(cuid())
+  groupId         String
+  companyId       String
+  serviceClientId String
+  invoiceNumber   String?
+  status          ClientInvoiceStatus @default(DRAFT)
+  subtotalMinor   Int
+  taxMinor        Int                 @default(0)
+  totalMinor      Int
+  currencyCode    String              @default("USD")
+  notes           String?
+  issuedAt        DateTime?
+  issuedByUserId  String?
+  voidedAt        DateTime?
+  voidedByUserId  String?
+  voidReason      String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  group           Group               @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company         Company             @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  serviceClient   ServiceClient       @relation(fields: [serviceClientId], references: [id], onDelete: Restrict)
+  issuedByUser    User?               @relation("ClientInvoiceIssuedBy", fields: [issuedByUserId], references: [id], onDelete: SetNull)
+  voidedByUser    User?               @relation("ClientInvoiceVoidedBy", fields: [voidedByUserId], references: [id], onDelete: SetNull)
+  lines           ClientInvoiceLine[]
+  invoicedWorkOrders WorkOrder[]      @relation("WorkOrderInvoicedBy")
+  deliveries      ClientInvoiceDelivery[]
+
+  @@index([groupId], map: "client_invoices_group_id_idx")
+  @@index([companyId], map: "client_invoices_company_id_idx")
+  @@index([serviceClientId], map: "client_invoices_service_client_id_idx")
+  @@index([companyId, status], map: "client_invoices_company_id_status_idx")
+  @@unique([companyId, invoiceNumber], map: "client_invoices_company_id_invoice_number_key")
+  @@map("client_invoices")
+}
+
+model ClientInvoiceLine {
+  id                      String        @id @default(cuid())
+  groupId                 String
+  companyId               String
+  clientInvoiceId         String
+  workOrderId             String
+  workOrderServiceLineId  String
+  vehicleId               String
+  workOrderNumberSnapshot String
+  vinSnapshot             String
+  vehicleLabelSnapshot    String?
+  serviceNameSnapshot     String
+  serviceCategorySnapshot String?
+  description             String?
+  quantity                Int           @default(1)
+  unitPriceMinor          Int
+  lineTotalMinor          Int
+  currencyCode            String        @default("USD")
+  createdAt               DateTime      @default(now())
+  group                   Group         @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company                 Company       @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  clientInvoice           ClientInvoice @relation(fields: [clientInvoiceId], references: [id], onDelete: Restrict)
+  workOrder               WorkOrder     @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  workOrderServiceLine    WorkOrderServiceLine @relation(fields: [workOrderServiceLineId], references: [id], onDelete: Restrict)
+  vehicle                 Vehicle       @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+
+  @@index([companyId], map: "client_invoice_lines_company_id_idx")
+  @@index([clientInvoiceId], map: "client_invoice_lines_client_invoice_id_idx")
+  @@index([workOrderId], map: "client_invoice_lines_work_order_id_idx")
+  @@index([workOrderServiceLineId], map: "client_invoice_lines_work_order_service_line_id_idx")
+  @@index([vehicleId], map: "client_invoice_lines_vehicle_id_idx")
+  @@map("client_invoice_lines")
+}
+
+model ClientInvoiceDelivery {
+  id                String                      @id @default(cuid())
+  groupId           String
+  companyId         String
+  clientInvoiceId   String
+  channel           String                      @default("email")
+  recipientEmail    String
+  subject           String
+  status            ClientInvoiceDeliveryStatus
+  provider          String
+  providerMessageId String?
+  errorMessage      String?
+  messageNote       String?
+  sentAt            DateTime?
+  attemptedAt       DateTime                    @default(now())
+  sentByUserId      String?
+  createdAt         DateTime                    @default(now())
+  group             Group                       @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company           Company                     @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  clientInvoice     ClientInvoice               @relation(fields: [clientInvoiceId], references: [id], onDelete: Restrict)
+  sentByUser        User?                       @relation("ClientInvoiceDeliverySentBy", fields: [sentByUserId], references: [id], onDelete: SetNull)
+
+  @@index([companyId], map: "client_invoice_deliveries_company_id_idx")
+  @@index([clientInvoiceId], map: "client_invoice_deliveries_client_invoice_id_idx")
+  @@index([recipientEmail], map: "client_invoice_deliveries_recipient_email_idx")
+  @@map("client_invoice_deliveries")
+}
+
+enum LaborWorkAssignmentStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+  CANCELLED
+}
+
+enum LaborWorkProgressStatus {
+  STARTED
+  PREP_IN_PROGRESS
+  WASH_IN_PROGRESS
+  ALMOST_DONE
+  COMPLETED
+  BLOCKED
+}
+
+model LaborWorkAssignment {
+  id                      String                    @id @default(cuid())
+  groupId                 String
+  companyId               String
+  employeeId              String
+  shiftId                 String
+  serviceClientId         String
+  locationId              String
+  serviceCatalogItemId    String?
+  vehicleId               String?
+  vinSnapshot             String?
+
+  employeeNameSnapshot    String
+  clientNameSnapshot      String
+  locationNameSnapshot    String
+  addressSnapshot         String
+  serviceNameSnapshot     String
+
+  status                  LaborWorkAssignmentStatus @default(NOT_STARTED)
+  progressPercent         Int                       @default(0)
+  progressStatus          LaborWorkProgressStatus?
+
+  startedAt               DateTime
+  completedAt             DateTime?
+  cancelledAt             DateTime?
+  blockedAt               DateTime?
+
+  referencePrepStartedAt    DateTime?
+  referencePrepCompletedAt  DateTime?
+  referenceWashStartedAt    DateTime?
+  referenceWashCompletedAt  DateTime?
+  referenceServiceMinutes   Int?
+  referencePrepMinutes      Int?
+  referenceWashMinutes      Int?
+
+  notes                   String?
+  blockedReason           String?
+
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+
+  group                   Group                     @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  company                 Company                   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  employee                Employee                  @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  shift                   Shift                     @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+  serviceClient           ServiceClient             @relation(fields: [serviceClientId], references: [id], onDelete: Restrict)
+  location                Location                  @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  serviceCatalogItem      ServiceCatalogItem?       @relation(fields: [serviceCatalogItemId], references: [id], onDelete: SetNull)
+  vehicle                 Vehicle?                  @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+
+  @@index([groupId], map: "labor_work_assignments_group_id_idx")
+  @@index([companyId], map: "labor_work_assignments_company_id_idx")
+  @@index([employeeId], map: "labor_work_assignments_employee_id_idx")
+  @@index([shiftId], map: "labor_work_assignments_shift_id_idx")
+  @@index([serviceClientId], map: "labor_work_assignments_service_client_id_idx")
+  @@index([locationId], map: "labor_work_assignments_location_id_idx")
+  @@index([status], map: "labor_work_assignments_status_idx")
+  @@index([startedAt], map: "labor_work_assignments_started_at_idx")
+  @@map("labor_work_assignments")
+}

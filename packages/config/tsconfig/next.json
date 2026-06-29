@@ -1,0 +1,12 @@
+{
+  "extends": "./base.json",
+  "compilerOptions": {
+    "allowJs": false,
+    "jsx": "preserve",
+    "incremental": true,
+    "isolatedModules": true,
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  }
+}
