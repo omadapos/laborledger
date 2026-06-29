@@ -15,7 +15,7 @@ if (!command) {
   process.exit(1);
 }
 
-const env = loadDotEnvFiles([".env", ".env.example"]);
+const env = loadDotEnvFiles([".env.example", ".env", ".env.production"]);
 
 const child = spawn(resolvedCommand, args, {
   stdio: "inherit",

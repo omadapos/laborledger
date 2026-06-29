@@ -34,6 +34,16 @@ pm2 start ecosystem.config.cjs
 pm2 save
 ```
 
+Deploy runbook: `deploy/README.md`
+
+Quick VPS update:
+
+```bash
+cp .env.production.example .env.production   # first time only
+./deploy/setup-vps-first-run.sh              # first time only
+./deploy/deploy-vps.sh
+```
+
 Nginx config: `deploy/nginx/admin.mariosautodetail.com.conf`
 
 ## Tests
